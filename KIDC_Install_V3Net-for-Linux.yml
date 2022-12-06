@@ -1,0 +1,144 @@
+---
+- name: Installation V3Net and EPP Agent
+  hosts: EPP_Agent
+  gather_facts: yes
+  become: yes
+  vars_files:
+    - /Ansible/Playbook/Variable.yml
+  vars:
+    com_res_cpu_point: "4"             # CPU 4 Cores
+    com_res_memory_point: "4.00000"    # RAM 4 GB
+    com_res_storage_point: "10"        # DISK 10 GB
+    net_ipv4_epp_svr: "172.22.181.251" # KIDC EPP Master  
+    distribution_version: "CentOS7"  
+
+  tasks:
+    - name: (Pre Action - Step 1) Check If This Computer Is in A State of Available PROCESSOR Resource for Installation (More than {{ com_res_cpu_point }} Core(s))
+      shell: "cat /proc/cpuinfo | grep processor | wc -l"
+      register: chkProcessorOnLocalComputer
+      failed_when: chkProcessorOnLocalComputer.stdout|int < com_res_cpu_point|int
+      tags: chk_com_res
+
+    - name: (Pre Action - Step 2) Check If This Computer Is in A State of Available MEMORY Resource for Installation (More than {{ com_res_memory_point }}GB)
+      shell: "cat /proc/meminfo | grep MemAvailable | awk '{ print ($2/1024/1024) }'"
+      register: chkMemoryOnLocalComputer
+      failed_when: chkMemoryOnLocalComputer.stdout|float < com_res_memory_point|float
+      tags: chk_com_res
+
+    - name: (Pre Action - Step 3) Check If This Computer Is in A State of Available STORAGE Resource for Installation  (More than {{ com_res_storage_point }}GB in {{ appconf.download_path }} Download Directory)
+      shell: "df {{ appconf.download_path  }}  | grep -v Filesystem | awk '{ print ($4/1024/1024) }'"
+      register: chkStorageOnLocalComputer
+      failed_when: chkStorageOnLocalComputer.stdout|int < com_res_storage_point|int
+      tags: chk_com_res
+
+#    - name: (Pre Action - Step 3-2) Check If This Computer Is in A State of Available STORAGE Resource for Installation  (More than {{ com_res_storage_point }}GB in {{ appconf.installation_parent_path }} Installation Directory)
+#      shell: "df {{ appconf.installation_parent_path }}  | grep -v Filesystem | awk '{ print ($4/1024/1024) }'"
+#      register: chkStorageOnLocalComputer
+#      failed_when: chkStorageOnLocalComputer.stdout|int < com_res_storage_point|int
+#      tags: chk_com_res
+
+    - name: (Pre Action - Step 4) Check If This Computer IS CentOS7
+      debug:
+        msg: "This Computer's Version is CentOS 7"
+      failed_when: (ansible_distribution != "CentOS") or (ansible_distribution_major_version != "7")
+
+    - name: (Pre Action - Step 5) Check If Network Connection Is Possible with KIDC EPP Manager Server 
+      wait_for:
+        host: '{{ net_ipv4_epp_svr }}'
+        port: '{{ item }}'
+        state: started
+        delay: 0
+        timeout: 3
+      with_items:
+         - "8804"
+         - "8807"
+         - "5465"
+         - "5645"
+         - "8809"
+         - "8810"
+         - "2186"
+         - "2187"
+         - "5545"
+      ignore_errors: yes
+      tags: chk_net
+
+    - name: Check If V3Net is Installed
+      stat:
+        path: /usr/local/v3net/v3net.sh
+      register: statResultInstallation
+      tags: chk_prog_v3net
+
+    - name: Check The Version of V3Net Installed
+      shell: "cat {{ appconf.installation_path }}/conf/v3netd.conf | grep -i \"version=\" | cut -d \"=\" -f2"
+      args: 
+        executable: /bin/bash
+      register: statResultVersion
+      when: statResultInstallation.stat.exists == True
+      tags: chk_prog_v3net
+    - debug:
+        var: statResultVersion.stdout
+      when: statResultInstallation.stat.exists == True
+      tags: chk_prog_v3net
+
+    - name: Download and Unarchive Installation File of V3Net
+      unarchive:
+        src: "{{ appconf.repo_path }}/{{ appver.v3net_installfile }}"
+        dest: "{{ appconf.download_path }}"
+        owner: root
+        group: root
+        mode: 0755
+      when: statResultInstallation.stat.exists != True
+
+    - name: Modify Installation Options (Installation Path, Remove Web Server)
+      lineinfile:
+        dest: "{{ appconf.download_path }}/v3net/linux_custom.cfg"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '^INSTALL_PATH=', line: 'INSTALL_PATH="{{ appconf.installation_path }}"' }
+        - { regexp: '^LIGHTTPD_USE=', line: 'LIGHTTPD_USE="N"' }
+        - { regexp: '^LIGHTTPD_REMOVE=', line: 'LIGHTTPD_REMOVE="Yes"' }
+      when: statResultInstallation.stat.exists != True    
+
+    - name: Execute install.sh of V3Net and EPP
+      shell: ./install.sh start
+      args:
+        chdir: "{{ appconf.download_path }}/v3net"
+        executable: /bin/bash
+      when: statResultInstallation.stat.exists != True
+
+    - name: Check The Completion of V3Net Installation
+      stat:
+        path: /etc/rc.d/init.d/v3netserv
+      register: statResultInstallationNew
+      tags: chk_v3net_status
+
+    - name: Stdout of V3Net Status  
+      register: statusout
+      shell: "{{ appconf.installation_path }}/v3net.sh status | tee -a {{ appconf.download_path }}/{{ report.result_file }}"
+      args:
+        executable: /bin/bash
+      ignore_errors: yes     
+      when: statResultInstallationNew.stat.exists == True
+      tags: chk_v3net_status
+    - debug:
+        var: statusout.stdout_lines
+      tags: chk_v3net_status
+
+    - name: Result File Upload to Ansible Master Machine
+      fetch:
+        src: "{{ appconf.download_path }}/{{ report.result_file }}"
+        dest: "{{ report.fetch_path }}/v3net_installed_{{ ansible_facts['fqdn'] }}_{{ ansible_facts['default_ipv4']['address'] }}.txt"
+        flat: yes
+      ignore_errors: yes
+      tags: fetch_result_file
+ 
+    - name: Delete Garbage File
+      file:
+        dest: "{{ item }}"
+        state: absent
+      with_items:
+        - "{{ appconf.download_path }}/v3net"
+        - "{{ appconf.download_path }}/{{ report.result_file }}"
+      ignore_errors: yes
+      when: statResultInstallation.stat.exists != True
