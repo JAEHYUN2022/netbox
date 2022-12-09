@@ -1,77 +1,75 @@
 ---
-- name : Check the Server in KIDC (dmesg, /etc/rc.local, netstat, systemlog, /etc/hosts.allow, ...)
-  hosts: all
+- name: Check the Server in KIDC (dmesg,/etc/rc.local, netstat, systemlog, /etc/hosts.allow, ...)
+  host: all # 점검 시 대상 호스트를 변경할 것
   remote_user: root
   tasks:
-    - name: Step 1. Check the error in system booting messages
+    - name: 1. Check the error in system booting messages
       command: dmesg -l err,crit,alert,emerg
-      register: dmesg
+      register: dmesg 
     - name: output dmesg
       debug:
-        msg:"{{ dmesg.stdout.split('\n') }}"
+        msg: "{{ dmesg.stdout.split('\n') }}"
 
-    - name: Step 2. Check the /etc/rc.local file
-      command: cat /etc/rc.local
-      register: rclocal
-    - name: output rclocal
-      debug:
-        msg: "{{ rclocal.stdout.split('\n') }}"
+    - name: 2. Check the Routing Table, Port Interface
+      command: netstat -nr
+      register: netstatnr
+    - name: output netstatnr
+      debug:
+        msg: "{{ netstatnr.stdout.split('\n') }}"
+     
+    - name: 3. Check the date
+      command: date
+      register: date
+    - name: output date
+      debug:
+        msg: "{{ date.stdout.split('\n') }}"
 
-    - name: Step 3. Check the Routing Table, Port number
-      command: netstat -nr
-      register: netstatnr
-    - name: output netstatnr
-      debug:
-        msg: "{{ netstatnr.stdout.split('\n') }}"
+    - name:  4. Check the system log 
+      command: tail -10 /var/log/messages
+      register: systemlog
+    - name: output systemlog
+      debug:
+        msg: "{{ systemlog.stdout.split('\n') }}"
 
-    - name: Step 4. Check the system log 
-      command: tail -10 /var/log/messages
-      register: systemlog
-    - name: output systemlog
-      debug:
-        msg: "{{ systemlog.stdout.split('\n') }}"
+    - name: 5. Check the disk free (mount, usage)
+      command: df -h
+      register: disk
+    - name: output disk
+      debug:  
+        msg: "{{ disk.stdout.split('\n') }}"
 
-    - name: Step 5. Check the iptables
-      command: iptables -nL -v
-      register: iptables
-    - name: output iptables
-      debug:
-        msg: "{{ iptables.stdout.split('\n') }}"
+    - name: 6. Check the OS Status (Memory, CPU ..)
+      command: top -b -n 1
+      register: top
+    - name: output top
+      debug:
+        msg: "{{ top.stdout.split('\n') }}"
 
-###### RHEL/CentOS 8에서 hosts.deny 기능 사용불가(비활성화) - tcp_wrappers 제거
-#    - name: Step 6. Check the /etc/hosts.allow file
-#      command: cat /etc/hosts.allow
-#      register: hosts
-#    - name: output hosts
-#      debug:
-#        msg: "{{ hosts.stdout.split('\n') }}"
+    - name:  7. Check the process status (zabbix agent, filebeat, v3net)
+      command: ps -ef | grep zabbix, filebeat, v3net
+      register: process
+    - name: output process
+      debug:
+        msg: "{{ process.stdout.split('\n') }}"
 
-#    - name: Step 7. Check the process status (zabbix agent, filebeat, v3net)
-#      command: ps -ef | grep zabbix, filebeat, v3net
-#      register: process
-#    - name: output process
-#      debug:
-#        msg: "{{ process.stdout.split('\n') }}"
+    - name: 8. Check the /etc/rc.local file
+      command: cat /etc/rc.local
+      register: rclocal
+    - name: output rclocal
+      debug:
+        msg: "{{ rclocal.stdout.split('\n') }}"
 
-    - name: Step 8. Check the date
-      command: date
-      register: date
-    - name: output date
-      debug:
-        msg: "{{ date.stdout.split('\n') }}"
+    - name: 10. Check the iptables
+      command: iptables -nL -v
+      register: iptables
+    - name: output iptables
+      debug:
+        msg: "{{ iptables.stdout.split('\n') }}"
 
-    - name: Step 9. Check the OS Status (Memory, CPU ..)
-      command: top -b -n 1
-      register: top
-    - name: output top
-      debug:
-        msg: "{{ top.stdout.split('\n') }}"
-
-    - name: Step 10. Check the disk free (mount, usage)
-      command: df -h
-      register: disk
-    - name: output disk
-      debug:  
-        msg: "{{ disk.stdout.split('\n') }}"
-
-
+    - name: 11. Check the /etc/hosts.allow file
+      command: cat /etc/hosts.allow
+      register: hosts
+    - name: output hosts
+      debug:
+        msg: "{{ hosts.stdout.split('\n') }}"
+  
