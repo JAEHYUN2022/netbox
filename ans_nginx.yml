@@ -1,6 +1,6 @@
 ---
 - name: Install nginx on CentOS
-  hosts: 192.168.57.51
+  hosts: 192.168.122.10
   gather_facts: no
   become: yes
 
