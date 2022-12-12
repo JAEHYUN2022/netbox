@@ -4,5 +4,8 @@ api_endpoint: http://192.168.57.50
 token: 5610d0961410e5b9df6ac864476e6fbfde37d9c0
 validate_cert: False
 config_context: False
+group_by:
+  - device_roles
 query_filters:
-  - tenants: jaehyun.park1
+  - role: Storage
+
