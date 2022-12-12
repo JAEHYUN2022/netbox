@@ -1,5 +1,6 @@
 ---
 - name: maintance server
   hosts: all
+  remote_user: root
   roles:
     - commons/maintainance
