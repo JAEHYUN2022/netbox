@@ -1,5 +1,5 @@
 ---
 - name: maintance server
-  hosts: 192.168.57.50
+  hosts: all
   roles:
     - commons/maintainance
