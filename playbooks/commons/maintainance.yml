@@ -2,4 +2,4 @@
 - name: maintance server
   hosts: all
   roles:
-    - /roles/commons/maintainance
+    - commons/maintainance
