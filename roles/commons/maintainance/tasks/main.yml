@@ -23,9 +23,11 @@
   - name:  4. Check the system log 
     command: tail -10 /var/log/messages
     register: systemlog
+    ignore_errors: yes
   - name: output systemlog
     debug:
       msg: "{{ systemlog.stdout.split('\n') }}"
+    ignore_errors: yes
 
   - name: 5. Check the disk free (mount, usage)
     command: df -h
