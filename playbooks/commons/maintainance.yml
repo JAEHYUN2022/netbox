@@ -1,6 +1,6 @@
 ---
 - name: maintance server
-  hosts: 192.168.57.50
+  hosts: all
   remote_user: root
   roles:
     - commons/maintainance
