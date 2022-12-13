@@ -1,5 +1,5 @@
 ---
-- name: gather_facts.yml
+- name: gather_facts
   hosts: all
   remote_user: root
   roles:
