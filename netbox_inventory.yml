@@ -5,6 +5,4 @@ token: 5610d0961410e5b9df6ac864476e6fbfde37d9c0
 gather_facts: True
 validate_cert: False
 config_context: Falses
-query_filters:
-  - tenant: hong
 
