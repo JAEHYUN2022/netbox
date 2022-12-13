@@ -1,0 +1,6 @@
+---
+- name: gather_facts.yml
+  hosts: all
+  remote_user: root
+  roles:
+    - commons/gather_facts
