@@ -1,7 +1,0 @@
----
-- name: gather_facts
-  hosts: all
-  gather_facts: true
-  remote_user: root
-  roles:
-    - commons/gather_facts
