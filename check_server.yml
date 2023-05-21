@@ -27,14 +27,6 @@
       debug:
         msg: "{{ date_output.stdout.split('\n') }}"
 
-    - name: 4. Check the system log
-      command: tail -10 /var/log/messages
-      register: systemlog_output
-
-    - name: Output systemlog
-      debug:
-        msg: "{{ systemlog_output.stdout.split('\n') }}"
-
     - name: 5. Check the disk free (mount, usage)
       command: df -h
       register: disk_output
