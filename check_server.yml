@@ -1,74 +1,84 @@
 ---
-- name: Check the Server in KIDC (dmesg,/etc/rc.local, netstat, systemlog, /etc/hosts.allow, ...)
-  host: all # 점검 시 대상 호스트를 변경할 것
+- name: Check the Server in KIDC (dmesg, /etc/rc.local, netstat, systemlog, /etc/hosts.allow, ...)
+  hosts: all
   remote_user: root
   tasks:
     - name: 1. Check the error in system booting messages
       command: dmesg -l err,crit,alert,emerg
-      register: dmesg 
-    - name: output dmesg
+      register: dmesg_output
+
+    - name: Output dmesg
       debug:
-        msg: "{{ dmesg.stdout.split('\n') }}"
+        msg: "{{ dmesg_output.stdout.split('\n') }}"
 
     - name: 2. Check the Routing Table, Port Interface
-      command: netstat -nr
-      register: netstatnr
-    - name: output netstatnr
-      debug:
-        msg: "{{ netstatnr.stdout.split('\n') }}"
-     
-    - name: 3. Check the date
-      command: date
-      register: date
-    - name: output date
-      debug:
-        msg: "{{ date.stdout.split('\n') }}"
+      command: netstat -nr
+      register: netstatnr_output
 
-    - name:  4. Check the system log 
-      command: tail -10 /var/log/messages
-      register: systemlog
-    - name: output systemlog
-      debug:
-        msg: "{{ systemlog.stdout.split('\n') }}"
+    - name: Output netstatnr
+      debug:
+        msg: "{{ netstatnr_output.stdout.split('\n') }}"
 
-    - name: 5. Check the disk free (mount, usage)
-      command: df -h
-      register: disk
-    - name: output disk
-      debug:  
-        msg: "{{ disk.stdout.split('\n') }}"
+    - name: 3. Check the date
+      command: date
+      register: date_output
 
-    - name: 6. Check the OS Status (Memory, CPU ..)
-      command: top -b -n 1
-      register: top
-    - name: output top
-      debug:
-        msg: "{{ top.stdout.split('\n') }}"
+    - name: Output date
+      debug:
+        msg: "{{ date_output.stdout.split('\n') }}"
 
-    - name:  7. Check the process status (zabbix agent, filebeat, v3net)
-      command: ps -ef | grep zabbix, filebeat, v3net
-      register: process
-    - name: output process
-      debug:
-        msg: "{{ process.stdout.split('\n') }}"
+    - name: 4. Check the system log
+      command: tail -10 /var/log/messages
+      register: systemlog_output
 
-    - name: 8. Check the /etc/rc.local file
-      command: cat /etc/rc.local
-      register: rclocal
-    - name: output rclocal
-      debug:
-        msg: "{{ rclocal.stdout.split('\n') }}"
+    - name: Output systemlog
+      debug:
+        msg: "{{ systemlog_output.stdout.split('\n') }}"
 
-    - name: 10. Check the iptables
-      command: iptables -nL -v
-      register: iptables
-    - name: output iptables
-      debug:
-        msg: "{{ iptables.stdout.split('\n') }}"
+    - name: 5. Check the disk free (mount, usage)
+      command: df -h
+      register: disk_output
 
-    - name: 11. Check the /etc/hosts.allow file
-      command: cat /etc/hosts.allow
-      register: hosts
-    - name: output hosts
-      debug:
-        msg: "{{ hosts.stdout.split('\n') }}"
+    - name: Output disk
+      debug:
+        msg: "{{ disk_output.stdout.split('\n') }}"
+
+    - name: 6. Check the OS Status (Memory, CPU, etc.)
+      command: top -b -n 1
+      register: top_output
+
+    - name: Output top
+      debug:
+        msg: "{{ top_output.stdout.split('\n') }}"
+
+    - name: 7. Check the process status (zabbix agent, filebeat, v3net)
+      command: ps -ef | grep "zabbix\|filebeat\|v3net"
+      register: process_output
+
+    - name: Output process
+      debug:
+        msg: "{{ process_output.stdout.split('\n') }}"
+
+    - name: 8. Check the /etc/rc.local file
+      command: cat /etc/rc.local
+      register: rclocal_output
+
+    - name: Output rclocal
+      debug:
+        msg: "{{ rclocal_output.stdout.split('\n') }}"
+
+    - name: 10. Check the iptables
+      command: iptables -nL -v
+      register: iptables_output
+
+    - name: Output iptables
+      debug:
+        msg: "{{ iptables_output.stdout.split('\n') }}"
+
+    - name: 11. Check the /etc/hosts.allow file
+      command: cat /etc/hosts.allow
+      register: hosts_output
+
+    - name: Output hosts
+      debug:
+        msg: "{{ hosts_output.stdout.split('\n') }}"
