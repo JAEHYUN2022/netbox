@@ -1,1 +1,11 @@
-
+---
+- name: Check the Server in KIDC (dmesg,/etc/rc.local, netstat, systemlog, /etc/hosts.allow, ...)
+  host: all # 점검 시 대상 호스트를 변경할 것
+  remote_user: root
+  tasks:
+    - name: 1. Check the error in system booting messages
+      command: dmesg -l err,crit,alert,emerg
+      register: dmesg 
+    - name: output dmesg
+      debug:
+        msg: "{{ dmesg.stdout.split('\n') }}"
