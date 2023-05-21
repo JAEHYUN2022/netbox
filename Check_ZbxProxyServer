@@ -1,0 +1,28 @@
+---
+- hosts: all
+  gather_facts: false
+  vars:
+    proxy_servers:
+      - { host: '211.233.80.15', port: '10051', active_host: '211.233.80.15', zone: 'N1' }
+      - { host: '117.52.156.15', port: '10051', active_host: '117.52.156.15', zone: 'A1' }
+      - { host: '172.22.200.160,172.22.200.161,172.22.200.162', port: '10051', active_host: '172.22.200.112', zone: 'M1' }
+  tasks:
+    - name: Check Zbx Proxy Server
+      ansible.builtin.wait_for:
+        host: "{{ item.active_host }}"
+        port: "{{ item.port }}"
+        state: started
+        delay: 0
+        timeout: 3
+      loop: "{{ proxy_servers }}"
+      ignore_errors: yes
+      register: res
+      when: not (res is defined and res.failed == false)
+    - name: Setting Server Information
+      set_fact:
+        zbx_proxy_server: "{{ item.item }}"
+      when: item.failed is defined and item.failed == false
+      loop: "{{ res.results }}"
+    - name: Check zbx Server Cannot Connected
+      fail: msg="Zabbix Proxy Server Cannot Connected"
+      when: zbx_proxy_server is not defined
