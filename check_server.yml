@@ -43,14 +43,6 @@
       debug:
         msg: "{{ top_output.stdout.split('\n') }}"
 
-    - name: 7. Check the process status (zabbix agent, filebeat, v3net)
-      command: ps -ef | grep "zabbix\|filebeat\|v3net"
-      register: process_output
-
-    - name: Output process
-      debug:
-        msg: "{{ process_output.stdout.split('\n') }}"
-
     - name: 8. Check the /etc/rc.local file
       command: cat /etc/rc.local
       register: rclocal_output
