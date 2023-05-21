@@ -58,11 +58,3 @@
     - name: Output iptables
       debug:
         msg: "{{ iptables_output.stdout.split('\n') }}"
-
-    - name: 11. Check the /etc/hosts.allow file
-      command: cat /etc/hosts.allow
-      register: hosts_output
-
-    - name: Output hosts
-      debug:
-        msg: "{{ hosts_output.stdout.split('\n') }}"
